@@ -21,17 +21,21 @@
 
 人工查看已认证模型目录和应用选择器。预期只开放服务端允许的 GPT 与明确支持 OpenAI Responses 的兼容模型，并且必须存在官方价格依据。普通 Anthropic / Gemini 协议条目、Coding Bro 聚合模型、仅 Chat Completions 或缺少明确能力及官方价格依据的条目不可启动；模型名称不能替代明确兼容声明。
 
+当前目录开放的五个候选 GPT 为 `gpt-5.5`、`gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-6-astra`、`gpt-6.1-sol`。目录登记仅说明允许选择，不能作为实际上游供给或成功回复的证据。
+
+人工刷新 Lite 目录并检查明确不提供的 `gpt-5.6-luna` 和 `gpt-5.5-pro`；已打开的官方 App 需从 Lite 重新启动以加载新目录。预期两者没有可用报价、不可选择或启动；旧页面的历史选择刷新后失效。使用人工 API 调试工具尝试这两个 ID，预期后台明确拒绝，在调用上游及产生消费前终止，不静默替换模型；记录实际拒绝结果，不能声称已执行或通过。本节不包含 Luna / Pro 的推理成功或功能验收步骤。
+
 逐个核对所有开放模型的以下信息：
 
 - `pricingPolicy` 为 `basis: official`、`multiplierBasisPoints: 2000`、`version: codex-lite-official-v1`。
 - `officialWalletPricing` 是服务端官方价格快照；`walletPricing` 的输入、输出、长上下文及存在的缓存输入单价逐项等于官方对应单价乘 0.2。保留精确小数，不提前向上取整。
-- 对明确公布写缓存价格的型号，同时核对 `cacheWriteInputMicroUsdPerMillionTokens` 与 `longCacheWriteInputMicroUsdPerMillionTokens`，单位同为 microUSD / 百万 tokens；Lite 写缓存价也等于对应官方快照价乘 0.2。当前已列出的 GPT-5.6 / GPT-6 型号官方写缓存价是对应区间普通输入价的 1.25 倍；GPT-5.5 / GPT-5.5 Pro 不凭空增加写缓存报价。应用区分缓存读取与缓存写入，有字段才显示该项。
+- 对明确公布写缓存价格的型号，同时核对 `cacheWriteInputMicroUsdPerMillionTokens` 与 `longCacheWriteInputMicroUsdPerMillionTokens`，单位同为 microUSD / 百万 tokens；Lite 写缓存价也等于对应官方快照价乘 0.2。当前目录候选中的 GPT-5.6 / GPT-6 型号官方写缓存价是对应区间普通输入价的 1.25 倍；GPT-5.5 不凭空增加写缓存报价。应用区分缓存读取与缓存写入，有字段才显示该项。
 - `longContextThresholdTokens` 保持官方阈值，不乘折扣。官方价格来源与价格簿版本可以追溯；不能把已折扣的零售价格当作官方价格再乘 0.2。
 - 应用显示所选模型的服务端单价；价格元数据缺失时显示“价格同步中”，不伪造单价或钱包余额。账户优惠指模型用量单价，不是充值折扣。
 
 人工确认 Lite 的注册、登录、刷新、目录、钱包、充值和真实 CLI 请求携带 `X-Coding-Bro-Product: codex-lite`。完整版请求不因共享 SDK 自动获得 Lite 标记，其目录、模型定价及已有订阅额度保持完整版规则。Lite 展示原订阅状态；已有订阅时显示 Stripe 管理入口，服务端允许管理时可打开 Portal，没有新增订阅购买入口。
 
-七个登记 GPT 的默认处理档位为 Standard。用人工 API 调试工具显式指定 `priority`、`fast`、`ultrafast` 或 `flex`，预期在预留及上游调用前明确拒绝，零消费；默认、`auto` 或 `default` 请求按 Standard 处理。既有幂等重放保留原结果。
+当前目录开放的五个候选 GPT 默认处理档位为 Standard。用人工 API 调试工具显式指定 `priority`、`fast`、`ultrafast` 或 `flex`，预期在预留及上游调用前明确拒绝，零消费；默认、`auto` 或 `default` 请求按 Standard 处理。既有幂等重放保留原结果。
 
 ## 从应用选择模型并获得真实 CLI 回复
 
@@ -54,15 +58,13 @@
 4. custom provider 设置 `requires_openai_auth=false`，不复制个人 ChatGPT `auth.json`。官方 App 若因版本或组织政策要求额外登录，按官方提示完成，不记录其凭据；Lite 不声称自动登录或提供 ChatGPT 云端权益。
 5. 人工发送极短提示并核对回复、后端真实模型及余额扣款，按前一节同样规则核对。仅显示所选模型、启动成功或出现窗口均不足以证明 Lite 路由与计费。换模型再次从 Lite 启动，预期新实例加载新的精确选择。
 
-对 Pro，在完整回复返回并开始结算前，手工停止 CLI 请求或实际中断其 HTTP 连接。预期上游调用被取消、未结算预留释放、零消费；取消与超时分别记录。仅关闭窗口或隐藏终端不代表请求已停止；成功结算后的断开不撤销已完成账本。此项仍是待执行步骤。
-
 ## 缓存、长上下文与独立计费核对
 
 人工构造可观察缓存读取命中、缓存写入的输入，以及官方阈值边界两侧的输入；通过本次请求的真实用量及预留时保存的官方价格和政策快照核对，不按提示字符数猜测实际 token 数，也不使用请求完成后才更新的报价替代本次快照。
 
 - 令总输入为 `I`、缓存读取为 `C`、缓存写入为 `W`、输出为 `O`。读取来自 `input_tokens_details.cached_tokens`，写入来自存在的 `input_tokens_details.cache_write_tokens`；缺少写入计数时按零处理。所有计数必须是非负整数，并严格校验 `C + W ≤ I`，非法用量不能成功结算。
 - 对明确有写缓存报价的 Lite 型号，普通输入量为 `I − C − W`；缓存读取和写入分别计费一次，不能再计入普通输入或互相重复。短 / 长上下文分别使用本次快照对应的普通输入、缓存读取和缓存写入价。
-- 没有独立缓存读取价时依服务端明确的普通输入回退规则。官方 GPT-5.5 / GPT-5.5 Pro 的 `officialReference.cacheWritePricing` 为 `ordinary-input`，不增加独立写缓存费用；没有新增写缓存字段的历史预留快照也保持原计费。新兼容模型若标记 `cacheWritePricing: unavailable` 且返回 `W > 0`，必须拒绝成功结算并释放预留，不猜测 1.25 倍价格或套用普通输入价。完整版用量和价格规则保持不变。
+- 没有独立缓存读取价时依服务端明确的普通输入回退规则。当前候选中的 GPT-5.5 的 `officialReference.cacheWritePricing` 为 `ordinary-input`，不增加独立写缓存费用；没有新增写缓存字段的历史预留快照也保持原计费。新兼容模型若标记 `cacheWritePricing: unavailable` 且返回 `W > 0`，必须拒绝成功结算并释放预留，不猜测 1.25 倍价格或套用普通输入价。完整版用量和价格规则保持不变。
 - 只有实际总输入 token 数严格大于官方阈值时采用长上下文单价；恰好等于阈值仍采用普通单价。
 - 对有写缓存报价（`separate-rate`）的型号，计算整笔官方费用：`((I − C − W) × 官方输入价 + C × 官方缓存读取价 + W × 官方缓存写入价 + O × 官方输出价) / 1,000,000`，单位为 microUSD。官方 `ordinary-input` 或原历史快照使用原 `((I − C) × 官方输入价 + C × 官方缓存读取价 + O × 官方输出价) / 1,000,000` 规则；`unavailable` 不能用于结算非零写缓存用量。
 - 整笔官方费用乘 0.2 后，仅最后向上取整一次到整数 microUSD。不要先对单价、每个费用项或已结算金额取整后再打折。
